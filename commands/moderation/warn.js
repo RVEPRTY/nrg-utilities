@@ -1,4 +1,5 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
+const { sendModLog } = require("../../core/modLogs");
 const mongoose = require("mongoose");
 
 const warnSchema = new mongoose.Schema({
@@ -21,6 +22,8 @@ o.setName("reason").setDescription("Reason").setRequired(true))
 
 async execute(interaction){
 
+try{
+
 const user = interaction.options.getUser("user");
 const reason = interaction.options.getString("reason");
 
@@ -38,7 +41,22 @@ date: Date.now()
 
 await data.save();
 
-interaction.reply({content:`${user.tag} warned.`, ephemeral:true});
+await interaction.reply({content:`${user.tag} warned.`, ephemeral:true});
+
+await sendModLog(interaction.client, interaction.guild, {
+title:"⚠ Warning",
+color:"Yellow",
+user:user.tag,
+moderator:interaction.user.tag,
+reason
+});
+
+}catch(error){
+
+console.error(error);
+interaction.reply({content:"Failed to warn user.", ephemeral:true});
+
+}
 
 }
 
