@@ -1,45 +1,78 @@
-const { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
+const {
+SlashCommandBuilder,
+EmbedBuilder,
+ActionRowBuilder,
+StringSelectMenuBuilder,
+PermissionFlagsBits
+} = require("discord.js");
 
 module.exports = {
 
 data: new SlashCommandBuilder()
 .setName("panel")
-.setDescription("Create NRG link dispenser panel"),
+.setDescription("Create link dispenser panel")
+.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 async execute(interaction){
 
-await interaction.deferReply({ephemeral:true});
-
 const embed = new EmbedBuilder()
-.setTitle("NRG Link Dispenser")
+.setTitle("⚡ NRG Link Dispenser")
 .setDescription(`
-Weekly Limits
-Normal Users: 1 link
-NRG Premium / Booster: 3 links
+Welcome to the official NRG Link System.
 
-Choose how you want to receive your link.
-`);
+📌 Rules:
+• Normal Users: 1 link per week  
+• NRG Premium / Booster: 3 links per week  
 
-const row = new ActionRowBuilder().addComponents(
+Use the dropdowns below to select:
+`)
+.setColor("#00AEEF")
+.setFooter({ text:"NRG Utilities • Automated System" });
 
-new ButtonBuilder()
-.setCustomId("link_dm")
-.setLabel("Send in DM")
-.setStyle(ButtonStyle.Primary),
-
-new ButtonBuilder()
-.setCustomId("link_reply")
-.setLabel("Send in Reply")
-.setStyle(ButtonStyle.Secondary)
-
+const deliveryMenu = new StringSelectMenuBuilder()
+.setCustomId("link_delivery")
+.setPlaceholder("Choose Delivery Method")
+.addOptions(
+{
+label:"Send in DMs",
+value:"dm",
+emoji:"📩"
+},
+{
+label:"Send as Reply",
+value:"reply",
+emoji:"💬"
+}
 );
+
+const typeMenu = new StringSelectMenuBuilder()
+.setCustomId("link_type")
+.setPlaceholder("Choose Link Type")
+.addOptions(
+{
+label:"NRG Full",
+value:"full",
+emoji:"⚡"
+},
+{
+label:"NRG Lite",
+value:"lite",
+emoji:"🟢"
+}
+);
+
+const row1 = new ActionRowBuilder().addComponents(deliveryMenu);
+const row2 = new ActionRowBuilder().addComponents(typeMenu);
 
 await interaction.channel.send({
 embeds:[embed],
-components:[row]
+components:[row1, row2]
 });
 
-await interaction.editReply("Panel created");
+await interaction.reply({
+content:"Dispenser panel created.",
+ephemeral:true
+});
 
 }
 
