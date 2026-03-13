@@ -1,186 +1,186 @@
-const { ActionRowBuilder, StringSelectMenuBuilder } = require("discord.js");
+const { 
+    ActionRowBuilder, 
+    StringSelectMenuBuilder 
+} = require("discord.js");
+
 const Links = require("../database/links");
 const Usage = require("../database/usage");
 
-module.exports = (client)=>{
+module.exports = (client) => {
 
-const userSelections = new Map();
+    const userSelections = new Map();
 
-client.on("interactionCreate", async interaction=>{
+    client.on("interactionCreate", async interaction => {
 
-//
-// ===============================
-// HELP BUTTONS
-// ===============================
-//
+        //
+        // ===============================
+        // HELP BUTTONS
+        // ===============================
+        //
 
-if(interaction.isButton()){
+        if (interaction.isButton()) {
 
-if(interaction.customId === "help_mod"){
-return interaction.reply({
-content:"/ban /kick /timeout /warn /purge",
-ephemeral:true
-});
-}
+            if (interaction.customId === "help_mod") {
+                return interaction.reply({
+                    content: "/ban /kick /timeout /warn /purge",
+                    ephemeral: true
+                });
+            }
 
-if(interaction.customId === "help_links"){
-return interaction.reply({
-content:"/addlink /bulkadd /panel",
-ephemeral:true
-});
-}
+            if (interaction.customId === "help_links") {
+                return interaction.reply({
+                    content: "/addlink /bulkadd /panel",
+                    ephemeral: true
+                });
+            }
 
-if(interaction.customId === "help_utils"){
-return interaction.reply({
-content:"/status /info",
-ephemeral:true
-});
-}
+            if (interaction.customId === "help_utils") {
+                return interaction.reply({
+                    content: "/status /info",
+                    ephemeral: true
+                });
+            }
 
-if(interaction.customId === "help_fun"){
-return interaction.reply({
-content:"/coinflip /8ball /roll /joke /avatar",
-ephemeral:true
-});
-}
+            if (interaction.customId === "help_fun") {
+                return interaction.reply({
+                    content: "/coinflip /8ball /roll /joke /avatar",
+                    ephemeral: true
+                });
+            }
+        }
 
-}
+        //
+        // ===============================
+        // DROPDOWNS
+        // ===============================
+        //
 
-//
-// ===============================
-// DROPDOWNS
-// ===============================
-//
+        if (interaction.isStringSelectMenu()) {
 
-if(interaction.isStringSelectMenu()){
+            let data = userSelections.get(interaction.user.id) || {};
 
-let data = userSelections.get(interaction.user.id) || {};
+            if (interaction.customId === "link_delivery") {
+                data.delivery = interaction.values[0];
+                await interaction.reply({ content: "Delivery selected.", ephemeral: true });
+            }
 
-if(interaction.customId === "link_delivery"){
-data.delivery = interaction.values[0];
-await interaction.reply({ content:"Delivery selected.", ephemeral:true });
-}
+            if (interaction.customId === "link_type") {
+                data.type = interaction.values[0];
+                await interaction.reply({ content: "Link type selected.", ephemeral: true });
+            }
 
-if(interaction.customId === "link_type"){
-data.type = interaction.values[0];
-await interaction.reply({ content:"Link type selected.", ephemeral:true });
-}
+            userSelections.set(interaction.user.id, data);
 
-userSelections.set(interaction.user.id, data);
+            //
+            // If BOTH selected → send link
+            //
+            if (data.delivery && data.type) {
 
-//
-// If BOTH selected → send link
-//
-if(data.delivery && data.type){
+                const WEEK = 604800000;
+                const now = Date.now();
 
-const WEEK = 604800000;
-const now = Date.now();
+                let user = await Usage.findOne({ userId: interaction.user.id });
 
-let user = await Usage.findOne({ userId: interaction.user.id });
+                if (!user) {
+                    user = await Usage.create({
+                        userId: interaction.user.id,
+                        weekStart: now,
+                        count: 0
+                    });
+                }
 
-if(!user){
+                if (now - user.weekStart > WEEK) {
+                    user.weekStart = now;
+                    user.count = 0;
+                }
 
-user = await Usage.create({
-userId: interaction.user.id,
-weekStart: now,
-count: 0
-});
+                let limit = 1;
 
-}
+                const isPremium = interaction.member.roles.cache.has(process.env.PREMIUM_ROLE);
+                const isBooster = interaction.member.roles.cache.has(process.env.BOOSTER_ROLE);
 
-if(now - user.weekStart > WEEK){
-user.weekStart = now;
-user.count = 0;
-}
+                if (isPremium || isBooster) {
+                    limit = 3;
+                }
 
-//
-// 🔥 Improved Role Logic
-//
-let limit = 1;
+                if (user.count >= limit) {
+                    return interaction.followUp({
+                        content: "Weekly link limit reached.",
+                        ephemeral: true
+                    });
+                }
 
-const isPremium = interaction.member.roles.cache.has(process.env.PREMIUM_ROLE);
-const isBooster = interaction.member.roles.cache.has(process.env.BOOSTER_ROLE);
+                const link = await Links.findOneAndUpdate(
+                    { used: false, type: data.type },
+                    { used: true, claimedBy: interaction.user.id, claimedAt: now }
+                );
 
-if(isPremium || isBooster){
-limit = 3;
-}
+                if (!link) {
+                    return interaction.followUp({
+                        content: `No **${data.type.toUpperCase()}** links available.`,
+                        ephemeral: true
+                    });
+                }
 
-if(user.count >= limit){
-return interaction.followUp({
-content:"Weekly link limit reached.",
-ephemeral:true
-});
-}
+                user.count++;
+                await user.save();
 
-const link = await Links.findOneAndUpdate(
-{ used:false, type:data.type },
-{ used:true, claimedBy:interaction.user.id, claimedAt:now }
-);
+                const message = `Your NRG ${data.type.toUpperCase()} Link:\n${link.url}`;
 
-if(!link){
-return interaction.followUp({
-content:`No **${data.type.toUpperCase()}** links available.`,
-ephemeral:true
-});
-}
+                if (data.delivery === "dm") {
 
-user.count++;
-await user.save();
+                    try {
+                        await interaction.user.send(message);
+                        await interaction.followUp({ content: "Check your DMs!", ephemeral: true });
+                    } catch {
+                        await interaction.followUp({ content: "Enable DMs to receive links.", ephemeral: true });
+                    }
 
-const message = `Your NRG ${data.type.toUpperCase()} Link:\n${link.url}`;
+                } else {
 
-if(data.delivery === "dm"){
+                    await interaction.followUp({
+                        content: message,
+                        ephemeral: true
+                    });
 
-try{
-await interaction.user.send(message);
-await interaction.followUp({ content:"Check your DMs!", ephemeral:true });
-}catch{
-await interaction.followUp({ content:"Enable DMs to receive links.", ephemeral:true });
-}
+                }
 
-} else {
+                //
+                // 🔄 RESET SELECTIONS
+                //
+                userSelections.delete(interaction.user.id);
 
-await interaction.followUp({
-content:message,
-ephemeral:true
-});
+                if (client.linkPanelMessage) {
 
-}
+                    const newDelivery = new StringSelectMenuBuilder()
+                        .setCustomId("link_delivery")
+                        .setPlaceholder("Choose Delivery Method")
+                        .addOptions(
+                            { label: "Send in DMs", value: "dm", emoji: "📩" },
+                            { label: "Send as Reply", value: "reply", emoji: "💬" }
+                        );
 
-//
-// 🔄 RESET DROPDOWNS VISUALLY
-//
-userSelections.delete(interaction.user.id);
+                    const newType = new StringSelectMenuBuilder()
+                        .setCustomId("link_type")
+                        .setPlaceholder("Choose Link Type")
+                        .addOptions(
+                            { label: "NRG Full", value: "full", emoji: "⚡" },
+                            { label: "NRG Lite", value: "lite", emoji: "🟢" }
+                        );
 
-if(client.linkPanelMessage){
+                    await client.linkPanelMessage.edit({
+                        components: [
+                            new ActionRowBuilder().addComponents(newDelivery),
+                            new ActionRowBuilder().addComponents(newType)
+                        ]
+                    });
 
-const newDelivery = new StringSelectMenuBuilder()
-.setCustomId("link_delivery")
-.setPlaceholder("Choose Delivery Method")
-.addOptions(
-{ label:"Send in DMs", value:"dm", emoji:"📩" },
-{ label:"Send as Reply", value:"reply", emoji:"💬" }
-);
+                }
 
-const newType = new StringSelectMenuBuilder()
-.setCustomId("link_type")
-.setPlaceholder("Choose Link Type")
-.addOptions(
-{ label:"NRG Full", value:"full", emoji:"⚡" },
-{ label:"NRG Lite", value:"lite", emoji:"🟢" }
-);
+            }
 
-await client.linkPanelMessage.edit({
-components:[
-new ActionRowBuilder().addComponents(newDelivery),
-new ActionRowBuilder().addComponents(newType)
-]
-});
+        }
 
-}
-
-}
-
-});
+    });
 
 };
