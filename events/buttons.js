@@ -3,13 +3,19 @@ const Usage = require("../database/usage");
 
 module.exports = (client)=>{
 
+// Store temporary selections
+client.linkDelivery = {};
+client.linkType = {};
+
 client.on("interactionCreate", async interaction=>{
 
-if(!interaction.isButton()) return;
-
 //
+// ===============================
 // HELP BUTTONS
+// ===============================
 //
+
+if(interaction.isButton()){
 
 if(interaction.customId === "help_mod"){
 return interaction.reply({
@@ -39,10 +45,45 @@ ephemeral:true
 });
 }
 
+}
+
 //
-// LINK SYSTEM
+// ===============================
+// DROPDOWN HANDLING (NEW)
+// ===============================
 //
 
+if(interaction.isStringSelectMenu()){
+
+// Delivery Dropdown
+if(interaction.customId === "link_delivery"){
+client.linkDelivery[interaction.user.id] = interaction.values[0];
+
+return interaction.reply({
+content:`Delivery set to **${interaction.values[0].toUpperCase()}**`,
+ephemeral:true
+});
+}
+
+// Type Dropdown
+if(interaction.customId === "link_type"){
+client.linkType[interaction.user.id] = interaction.values[0];
+
+return interaction.reply({
+content:`Link type set to **${interaction.values[0].toUpperCase()}**`,
+ephemeral:true
+});
+}
+
+}
+
+//
+// ===============================
+// LINK SYSTEM
+// ===============================
+//
+
+if(!interaction.isButton()) return;
 if(!interaction.customId.startsWith("link")) return;
 
 const WEEK = 604800000;
@@ -81,14 +122,18 @@ ephemeral:true
 });
 }
 
+// Get selected type (full or lite)
+const type = client.linkType[interaction.user.id] || "full";
+
+// Get link matching type
 const link = await Links.findOneAndUpdate(
-{ used:false },
+{ used:false, type:type },
 { used:true, claimedBy:interaction.user.id, claimedAt:now }
 );
 
 if(!link){
 return interaction.reply({
-content:"No links available.",
+content:`No **${type.toUpperCase()}** links available.`,
 ephemeral:true
 });
 }
@@ -96,11 +141,13 @@ ephemeral:true
 user.count++;
 await user.save();
 
-if(interaction.customId === "link_dm"){
+const delivery = client.linkDelivery[interaction.user.id] || "reply";
+
+if(delivery === "dm"){
 
 try{
 
-await interaction.user.send(`Your NRG Link:\n${link.url}`);
+await interaction.user.send(`Your NRG ${type.toUpperCase()} Link:\n${link.url}`);
 
 return interaction.reply({
 content:"Check your DMs!",
@@ -118,10 +165,10 @@ ephemeral:true
 
 }
 
-if(interaction.customId === "link_reply"){
+if(delivery === "reply"){
 
 return interaction.reply({
-content:`Your NRG Link:\n${link.url}`,
+content:`Your NRG ${type.toUpperCase()} Link:\n${link.url}`,
 ephemeral:true
 });
 
