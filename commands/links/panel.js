@@ -61,13 +61,16 @@ emoji:"🟢"
 }
 );
 
-await interaction.channel.send({
+const message = await interaction.channel.send({
 embeds:[embed],
 components:[
 new ActionRowBuilder().addComponents(deliveryMenu),
 new ActionRowBuilder().addComponents(typeMenu)
 ]
 });
+
+// Store panel message for resetting later
+interaction.client.linkPanelMessage = message;
 
 await interaction.reply({
 content:"Dispenser panel created.",
@@ -77,3 +80,4 @@ ephemeral:true
 }
 
 };
+
