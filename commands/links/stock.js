@@ -1,50 +1,59 @@
-const { SlashCommandBuilder, EmbedBuilder } = require("discord.js");
+const { SlashCommandBuilder, AttachmentBuilder, PermissionFlagsBits } = require("discord.js");
 const Links = require("../../database/links");
 
 module.exports = {
 
 data: new SlashCommandBuilder()
 .setName("stock")
-.setDescription("View NRG link stock and list links"),
+.setDescription("Export all available NRG links")
+.setDefaultMemberPermissions(PermissionFlagsBits.Administrator),
 
 async execute(interaction){
 
-// COUNT LINKS
-const fullAvailable = await Links.countDocuments({ type:"full", used:false });
-const fullUsed = await Links.countDocuments({ type:"full", used:true });
+// Get links
+const fullLinks = await Links.find({ type:"full", used:false });
+const liteLinks = await Links.find({ type:"lite", used:false });
 
-const liteAvailable = await Links.countDocuments({ type:"lite", used:false });
-const liteUsed = await Links.countDocuments({ type:"lite", used:true });
+// Counts
+const fullCount = fullLinks.length;
+const liteCount = liteLinks.length;
 
-// GET AVAILABLE LINKS (limit to 10 to avoid spam)
-const fullLinks = await Links.find({ type:"full", used:false }).limit(10);
-const liteLinks = await Links.find({ type:"lite", used:false }).limit(10);
+// Format lists
+const fullList = fullLinks.map(link => link.url).join("\n");
+const liteList = liteLinks.map(link => link.url).join("\n");
 
-// FORMAT LINKS
-const fullList = fullLinks.length
-? fullLinks.map(l => l.url).join("\n")
-: "None";
+// File content
+const textContent = 
+`NRG LINK STOCK EXPORT
 
-const liteList = liteLinks.length
-? liteLinks.map(l => l.url).join("\n")
-: "None";
+========================
+⚡ NRG FULL LINKS
+Available: ${fullCount}
+========================
 
-const embed = new EmbedBuilder()
-.setTitle("⚡ NRG Link Stock")
-.setColor("#00AEEF")
-.addFields(
-{
-name: "⚡ NRG Full",
-value: `Available: **${fullAvailable}**\nUsed: **${fullUsed}**\n\nLinks:\n${fullList}`
-},
-{
-name: "🟢 NRG Lite",
-value: `Available: **${liteAvailable}**\nUsed: **${liteUsed}**\n\nLinks:\n${liteList}`
-}
-)
-.setFooter({ text:"NRG Utilities • Stock System" });
+${fullList || "None"}
 
-await interaction.reply({ embeds:[embed], ephemeral:true });
+========================
+🟢 NRG LITE LINKS
+Available: ${liteCount}
+========================
+
+${liteList || "None"}
+`;
+
+// Convert to file
+const buffer = Buffer.from(textContent, "utf-8");
+
+const file = new AttachmentBuilder(buffer, {
+name: "nrg-link-stock.txt"
+});
+
+// Send file
+await interaction.reply({
+content: "📄 Here is the full NRG link stock export.",
+files: [file],
+ephemeral: true
+});
 
 }
 
