@@ -8,8 +8,11 @@ data: new SlashCommandBuilder()
 
 async execute(interaction){
 
-if(interaction.user.id !== process.env.OWNER_ROLE){
-return interaction.reply({content:"Owner only command.",ephemeral:true});
+if(!interaction.member.roles.cache.has(process.env.OWNER_ROLE)){
+return interaction.reply({
+content:"Owner role required to use this command.",
+ephemeral:true
+});
 }
 
 let results = [];
