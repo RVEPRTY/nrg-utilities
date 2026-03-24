@@ -26,7 +26,8 @@ const icons = {
     barracuda: '🦞 Barracuda',
     dnsfilter: '📡 DNSFilter',
     qustodio: '🪼 Qustodio',
-    sophos: '🐳 Sophos'
+    sophos: '🐳 Sophos',
+    zscaler: '☁️ Zscaler'
 };
 
 const getStatus = (blocked, error) => {
