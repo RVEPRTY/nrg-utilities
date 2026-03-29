@@ -27,7 +27,16 @@ const icons = {
     dnsfilter: '📡 DNSFilter',
     qustodio: '🪼 Qustodio',
     sophos: '🐳 Sophos',
-    zscaler: '☁️ Zscaler'
+    zscaler: '☁️ Zscaler',
+    gaggle: '🦆 Gaggle',
+    smoothwall: '💤 Smoothwall',
+    safedns: '🗼 SafeDNS',
+    ruckus: '🐕 Ruckus',
+    unifi: '🌀 Unifi',
+    webroot: '🌱 Webroot',
+    nextdns: '🛰️ NextDNS',
+    netsweeper: '💫 Netsweeper',
+    hapara: '🧩 Hapara'
 };
 
 const getStatus = (blocked, error) => {
