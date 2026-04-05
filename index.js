@@ -12,7 +12,8 @@ GatewayIntentBits.GuildMembers,
 GatewayIntentBits.GuildMessages,
 GatewayIntentBits.MessageContent,
 GatewayIntentBits.DirectMessages
-]
+],
+  partials: ["CHANNEL"]
 });
 
 mongoose.connect(process.env.MONGO_URI)
