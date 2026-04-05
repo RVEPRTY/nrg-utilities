@@ -25,5 +25,6 @@ require("./events/buttons")(client);
 require("./events/ready")(client);
 require("./events/guildMemberAdd")(client);
 require("./events/aiMention")(client);
+require("./events/dmLogger")(client);
 
 client.login(process.env.TOKEN);
