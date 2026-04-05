@@ -8,7 +8,9 @@ const loadCommands = require("./core/loader");
 const client = new Client({
 intents:[
 GatewayIntentBits.Guilds,
-GatewayIntentBits.GuildMembers
+GatewayIntentBits.GuildMembers,
+GatewayIntentBits.GuildMessages,
+GatewayIntentBits.MessageContent
 ]
 });
 
@@ -21,5 +23,6 @@ require("./events/interactionCreate")(client);
 require("./events/buttons")(client);
 require("./events/ready")(client);
 require("./events/guildMemberAdd")(client);
+require("./events/aimentions")(client);
 
 client.login(process.env.TOKEN);
