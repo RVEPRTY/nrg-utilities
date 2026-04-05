@@ -23,6 +23,6 @@ require("./events/interactionCreate")(client);
 require("./events/buttons")(client);
 require("./events/ready")(client);
 require("./events/guildMemberAdd")(client);
-require("./events/aimentions")(client);
+require("./events/aiMention")(client);
 
 client.login(process.env.TOKEN);
