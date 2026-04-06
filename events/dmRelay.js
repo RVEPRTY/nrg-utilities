@@ -1,43 +1,39 @@
 const { EmbedBuilder } = require("discord.js");
 
 module.exports = (client) => {
-  client.on("messageCreate", async (message) => {
-    try {
-      // Ignore bots
-      if (message.author.bot) return;
 
-      // Only DMs
-      if (message.guild) return;
+client.on("messageCreate", async (message) => {
 
-      console.log("DM received from:", message.author.tag);
+console.log("Event fired");
 
-      const logChannel = await client.channels.fetch(process.env.DM_LOG_CHANNEL).catch(() => null);
-      if (!logChannel) {
-        console.log("DM log channel not found");
-        return;
-      }
+if (message.author.bot) return;
+if (message.guild) return;
 
-      const embed = new EmbedBuilder()
-        .setColor("#00AEEF")
-        .setTitle("📩 New Support DM")
-        .addFields(
-          { name: "User", value: `${message.author.tag}` },
-          { name: "User ID", value: message.author.id },
-          { name: "Message", value: message.content || "No text" }
-        )
-        .setTimestamp();
+console.log("DM RECEIVED:", message.content);
 
-      if (message.attachments.size > 0) {
-        embed.addFields({
-          name: "Attachments",
-          value: message.attachments.map(a => a.url).join("\n")
-        });
-      }
+try {
 
-      logChannel.send({ embeds: [embed] });
+const channel = await client.channels.fetch(process.env.DM_LOG_CHANNEL);
 
-    } catch (err) {
-      console.error("DM Relay Error:", err);
-    }
-  });
+if (!channel) return console.log("Channel not found");
+
+const embed = new EmbedBuilder()
+.setTitle("📩 DM Received")
+.addFields(
+{ name: "User", value: `${message.author.tag}` },
+{ name: "ID", value: message.author.id },
+{ name: "Message", value: message.content || "No text" }
+)
+.setColor("#00AEEF");
+
+await channel.send({ embeds: [embed] });
+
+console.log("Message sent to log channel");
+
+} catch (err) {
+console.error("DM ERROR:", err);
+}
+
+});
+
 };
