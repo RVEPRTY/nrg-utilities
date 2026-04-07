@@ -29,3 +29,7 @@ require("./events/dmRelay")(client);
 require("./events/aiMention")(client);
 
 client.login(process.env.TOKEN);
+
+client.on("messageCreate", (msg) => {
+  console.log("GLOBAL:", msg.content, "| Guild:", !!msg.guild);
+});
