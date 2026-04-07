@@ -4,46 +4,45 @@ module.exports = (client) => {
 
   client.on("messageCreate", async (message) => {
 
-    console.log("Message event fired");
+    try {
 
-    // Ignore bots
-    if (message.author.bot) return;
+      // 🔥 IMPORTANT: Fetch partials
+      if (message.partial) {
+        await message.fetch();
+      }
 
-    // Only DMs
-    if (message.guild) return;
+      console.log("MESSAGE EVENT FIRED");
 
-    console.log("DM RECEIVED:", message.content);
+      if (message.author.bot) return;
 
-    const logChannel = await client.channels.fetch(process.env.DM_LOG_CHANNEL).catch(err => {
-      console.log("Channel fetch failed:", err);
-      return null;
-    });
+      // Only DMs
+      if (message.guild) return;
 
-    if (!logChannel) {
-      console.log("Log channel not found");
-      return;
+      console.log("DM RECEIVED:", message.content);
+
+      const channel = await client.channels.fetch(process.env.DM_LOG_CHANNEL);
+
+      if (!channel) {
+        console.log("Channel not found");
+        return;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor("#00AEEF")
+        .setTitle("📩 New DM Received")
+        .addFields(
+          { name: "User", value: `${message.author.tag} (${message.author.id})` },
+          { name: "Message", value: message.content || "No text" }
+        )
+        .setTimestamp();
+
+      await channel.send({ embeds: [embed] });
+
+      console.log("DM SENT TO CHANNEL");
+
+    } catch (err) {
+      console.error("DM RELAY ERROR:", err);
     }
-
-    const content = message.content || "No text";
-
-    // ✅ FIXED attachments handling
-    const attachments = message.attachments.size > 0
-      ? message.attachments.map(a => a.url).join("\n")
-      : "None";
-
-    const embed = new EmbedBuilder()
-      .setColor("#00AEEF")
-      .setTitle("📩 New DM Received")
-      .addFields(
-        { name: "User", value: `${message.author.tag} (${message.author.id})` },
-        { name: "Message", value: content },
-        { name: "Attachments", value: attachments }
-      )
-      .setTimestamp();
-
-    await logChannel.send({ embeds: [embed] });
-
-    console.log("Message sent to log channel");
 
   });
 
