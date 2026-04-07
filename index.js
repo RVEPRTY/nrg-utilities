@@ -25,7 +25,6 @@ require("./events/interactionCreate")(client);
 require("./events/buttons")(client);
 require("./events/ready")(client);
 require("./events/guildMemberAdd")(client);
-require("./events/dmLogger")(client);
 require("./events/dmRelay")(client);
 require("./events/aiMention")(client);
 
