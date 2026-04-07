@@ -44,3 +44,7 @@ client.on("raw", (packet) => {
     console.log("RAW EVENT RECEIVED");
   }
 });
+
+client.on("messageCreate", (msg) => {
+  console.log("MESSAGE EVENT:", msg.content, "| Guild:", !!msg.guild);
+});
