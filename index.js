@@ -32,3 +32,9 @@ client.login(process.env.TOKEN);
 client.once("ready", () => {
   console.log("BOT ONLINE");
 });
+
+client.on("raw", (packet) => {
+  if (packet.t === "MESSAGE_CREATE") {
+    console.log("RAW EVENT RECEIVED");
+  }
+});
