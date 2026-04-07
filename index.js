@@ -13,36 +13,32 @@ const client = new Client({
     GatewayIntentBits.MessageContent
   ],
   partials: [
-    Partials.Channel,
+    Partials.Channel,  // Needed for DMs
     Partials.Message,
     Partials.User
   ]
 });
 
+// Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI)
-.then(()=>console.log("MongoDB Connected"));
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.error("MongoDB connection error:", err));
 
+// Load commands
 loadCommands(client);
 
+// Event handlers
 require("./events/interactionCreate")(client);
 require("./events/buttons")(client);
 require("./events/ready")(client);
 require("./events/guildMemberAdd")(client);
-require("./events/dmRelay")(client);
-require("./events/aiMention")(client);
+require("./events/dmRelay")(client);      // Logs DMs
+require("./events/aiMention")(client);    // AI mentions handling
 
+// Login
 client.login(process.env.TOKEN);
 
+// Ready event
 client.once("ready", () => {
-  console.log("BOT ONLINE");
-});
-
-client.on("raw", (packet) => {
-  if (packet.t === "MESSAGE_CREATE") {
-    console.log("RAW EVENT RECEIVED");
-  }
-});
-
-client.on("messageCreate", (msg) => {
-  console.log("MESSAGE EVENT:", msg.content, "| Guild:", !!msg.guild);
+  console.log(`${client.user.tag} is ONLINE`);
 });
