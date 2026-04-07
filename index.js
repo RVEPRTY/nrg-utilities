@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 
 const loadCommands = require("./core/loader");
 
+const { Partials } = require("discord.js");
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -12,7 +14,11 @@ const client = new Client({
     GatewayIntentBits.DirectMessages,
     GatewayIntentBits.MessageContent
   ],
-  partials: ["CHANNEL"]
+  partials: [
+    Partials.Channel,
+    Partials.Message,
+    Partials.User
+  ]
 });
 
 mongoose.connect(process.env.MONGO_URI)
