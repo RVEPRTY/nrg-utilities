@@ -4,17 +4,32 @@ module.exports = (client) => {
 
   client.on("messageCreate", async (message) => {
 
+    console.log("Message event fired");
+
     // Ignore bots
     if (message.author.bot) return;
 
     // Only DMs
     if (message.guild) return;
 
-    const logChannel = await client.channels.fetch(process.env.DM_LOG_CHANNEL).catch(() => null);
-    if (!logChannel) return;
+    console.log("DM RECEIVED:", message.content);
+
+    const logChannel = await client.channels.fetch(process.env.DM_LOG_CHANNEL).catch(err => {
+      console.log("Channel fetch failed:", err);
+      return null;
+    });
+
+    if (!logChannel) {
+      console.log("Log channel not found");
+      return;
+    }
 
     const content = message.content || "No text";
-    const attachments = message.attachments.map(a => a.url).join("\n") || "None";
+
+    // ✅ FIXED attachments handling
+    const attachments = message.attachments.size > 0
+      ? message.attachments.map(a => a.url).join("\n")
+      : "None";
 
     const embed = new EmbedBuilder()
       .setColor("#00AEEF")
@@ -26,7 +41,9 @@ module.exports = (client) => {
       )
       .setTimestamp();
 
-    logChannel.send({ embeds: [embed] });
+    await logChannel.send({ embeds: [embed] });
+
+    console.log("Message sent to log channel");
 
   });
 
