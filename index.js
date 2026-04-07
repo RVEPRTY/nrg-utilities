@@ -29,6 +29,6 @@ require("./events/aiMention")(client);
 
 client.login(process.env.TOKEN);
 
-client.on("messageCreate", (msg) => {
-  console.log("GLOBAL:", msg.content, "| Guild:", !!msg.guild);
+client.once("ready", () => {
+  console.log("BOT ONLINE");
 });
