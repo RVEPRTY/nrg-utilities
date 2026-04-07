@@ -2,38 +2,49 @@ const { EmbedBuilder } = require("discord.js");
 
 module.exports = (client) => {
 
-client.on("messageCreate", async (message) => {
+  client.on("messageCreate", async (message) => {
 
-console.log("Event fired");
+    console.log("Message event fired");
 
-if (message.author.bot) return;
-if (message.guild) return;
+    // Ignore bots
+    if (message.author.bot) return;
 
-console.log("DM RECEIVED:", message.content);
+    // Only DMs
+    if (message.guild) return;
 
-try {
+    console.log("DM RECEIVED:", message.content);
 
-const channel = await client.channels.fetch(process.env.DM_LOG_CHANNEL);
+    const logChannel = await client.channels.fetch(process.env.DM_LOG_CHANNEL).catch(err => {
+      console.log("Channel fetch failed:", err);
+      return null;
+    });
 
-if (!channel) return console.log("Channel not found");
+    if (!logChannel) {
+      console.log("Log channel not found");
+      return;
+    }
 
-const embed = new EmbedBuilder()
-.setTitle("📩 DM Received")
-.addFields(
-{ name: "User", value: `${message.author.tag}` },
-{ name: "ID", value: message.author.id },
-{ name: "Message", value: message.content || "No text" }
-)
-.setColor("#00AEEF");
+    const content = message.content || "No text";
 
-await channel.send({ embeds: [embed] });
+    // ✅ FIXED attachments handling
+    const attachments = message.attachments.size > 0
+      ? message.attachments.map(a => a.url).join("\n")
+      : "None";
 
-console.log("Message sent to log channel");
+    const embed = new EmbedBuilder()
+      .setColor("#00AEEF")
+      .setTitle("📩 New DM Received")
+      .addFields(
+        { name: "User", value: `${message.author.tag} (${message.author.id})` },
+        { name: "Message", value: content },
+        { name: "Attachments", value: attachments }
+      )
+      .setTimestamp();
 
-} catch (err) {
-console.error("DM ERROR:", err);
-}
+    await logChannel.send({ embeds: [embed] });
 
-});
+    console.log("Message sent to log channel");
+
+  });
 
 };
